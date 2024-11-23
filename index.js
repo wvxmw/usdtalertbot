@@ -14,8 +14,6 @@ let lastTransferId = "";
 
 (async () => {
    while (true) {
-      console.log(lastTransferId);
-
       await fetch(
          `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=&filterTokenValue=1`,
          {
@@ -28,12 +26,6 @@ let lastTransferId = "";
          .then(async (data) => {
             const transfers = data.token_transfers;
             if (lastTransferId !== "" && transfers) {
-               // console.log(
-               //    lastTransferId !== transfers[0].transaction_id,
-               //    lastTransferId,
-               //    transfers[0].transaction_id
-               // );
-
                if (lastTransferId !== transfers[0].transaction_id) {
                   let newAmount = null;
                   await fetch(
@@ -75,9 +67,9 @@ let lastTransferId = "";
                            for (let subscriber in subscribers) {
                               await bot.telegram.sendMessage(
                                  subscribers[subscriber],
-                                 `Пополнение ${transferAmount} USDT${
+                                 `Пополнение: ${transferAmount} USDT${
                                     newAmount !== null
-                                       ? `\nНовый баланс ${newAmount} USDT`
+                                       ? `\nНовый баланс: ${newAmount} USDT`
                                        : ""
                                  }`
                               );
@@ -90,9 +82,6 @@ let lastTransferId = "";
                }
             } else {
                if (transfers) lastTransferId = transfers[0].transaction_id;
-            }
-            for (let transfer of transfers) {
-               console.log(transfer.block, transfer.quant);
             }
          })
          .catch((error) => console.error(error));
