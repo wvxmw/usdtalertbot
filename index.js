@@ -8,7 +8,7 @@ const tsApiKey = process.env.TS_TOKEN;
 const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const interval = 30;
-const minAmount = 10000;
+const minAmount = 0;
 
 let lastTransferId = "";
 
@@ -52,13 +52,13 @@ let lastTransferId = "";
                   const subscribers = await JSON.parse(
                      fs.readFileSync(subscribersFileName, { encoding: "utf8" })
                   );
-                  let maxI = 0;
+                  let maxI = transfers.length - 1;
                   for (let i = 0; i < transfers.length; i++) {
                      if (transfers[i].transaction_id === lastTransferId) {
-                        maxI = i;
+                        maxI = i - 1;
                      }
                   }
-                  for (let i = maxI - 1; i >= 0; i--) {
+                  for (let i = maxI; i >= 0; i--) {
                      if (transfers[i].transaction_id !== lastTransferId) {
                         const transferAmount = (
                            transfers[i].quant / 1000000
