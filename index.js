@@ -93,6 +93,8 @@ let lastTransferId = "";
             for (let i = 0; i < transfers.length; i++) {
                console.log(`${i + 1}. ${transfers[i].transaction_id}`);
             }
+				console.log("");
+				
          })
          .catch((error) => console.error(error));
       await sleep(interval * 1000);
