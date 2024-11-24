@@ -9,6 +9,7 @@ const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const interval = 30;
 const minAmount = 10000;
+const minAmountLow = 3000;
 
 let lastTransferId = "";
 
@@ -63,7 +64,11 @@ let lastTransferId = "";
                         const transferAmount = (
                            transfers[i].quant / 1000000
                         ).toFixed(0);
-                        if (transferAmount >= minAmount || newAmount < 20000) {
+                        if (
+                           transferAmount >= minAmount ||
+                           (newAmount < minAmount + 10000 &&
+                              transferAmount > minAmountLow)
+                        ) {
                            for (let subscriber in subscribers) {
                               await bot.telegram.sendMessage(
                                  subscribers[subscriber],
