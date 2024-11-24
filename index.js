@@ -18,7 +18,7 @@ let lastTransferId = "";
       console.log("Последнее ID " + lastTransferId);
 
       await fetch(
-         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=3&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=&filterTokenValue=1`,
+         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=3&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=false&filterTokenValue=1`,
          {
             headers: {
                "TRON-PRO-API-KEY": tsApiKey,
@@ -93,11 +93,10 @@ let lastTransferId = "";
             for (let i = 0; i < transfers.length; i++) {
                console.log(`${i + 1}. ${transfers[i].transaction_id}`);
             }
-				console.log("");
-				
          })
          .catch((error) => console.error(error));
       await sleep(interval * 1000);
+      console.log("");
    }
 })();
 
