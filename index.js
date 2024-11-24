@@ -15,6 +15,8 @@ let lastTransferId = "";
 
 (async () => {
    while (true) {
+      console.log(lastTransferId);
+
       await fetch(
          `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=&filterTokenValue=1`,
          {
