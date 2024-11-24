@@ -1,24 +1,31 @@
 const { Telegraf, Markup } = require("telegraf");
 const fs = require("fs");
 const fetch = require("node-fetch");
+const timestampToDate = require("timestamp-to-date");
 require("dotenv").config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const subscribersFileName = "subscribers.json";
 const tsApiKey = process.env.TS_TOKEN;
 const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-const interval = 30;
+const interval = 10;
 const minAmount = 10000;
 const minAmountLow = 3000;
 
 let lastTransferId = "";
+let lastTimeStamp = "";
 
 (async () => {
    while (true) {
       console.log("Последнее ID " + lastTransferId);
-
+      console.log(
+         `Последнее время ${
+            lastTimeStamp &&
+            timestampToDate(lastTimeStamp, "dd.MM.yyyy HH:mm:ss")
+         }`
+      );
       await fetch(
-         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=3&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=false&filterTokenValue=1`,
+         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=3&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=${lastTimeStamp}&end_timestamp=&confirm=&filterTokenValue=1`,
          {
             headers: {
                "TRON-PRO-API-KEY": tsApiKey,
@@ -28,7 +35,8 @@ let lastTransferId = "";
          .then((response) => response.json())
          .then(async (data) => {
             const transfers = data.token_transfers;
-            if (lastTransferId !== "" && transfers) {
+
+            if (lastTransferId !== "" && transfers.length > 0) {
                if (lastTransferId !== transfers[0].transaction_id) {
                   let newAmount = null;
                   await fetch(
@@ -86,12 +94,18 @@ let lastTransferId = "";
                      }
                   }
                   lastTransferId = transfers[0].transaction_id;
+                  lastTimeStamp = transfers[0].block_ts;
                }
             } else {
-               if (transfers) lastTransferId = transfers[0].transaction_id;
+               if (transfers.length > 0) {
+                  lastTransferId = transfers[0].transaction_id;
+                  lastTimeStamp = transfers[0].block_ts;
+               }
             }
-            for (let i = 0; i < transfers.length; i++) {
-               console.log(`${i + 1}. ${transfers[i].transaction_id}`);
+            if (transfers) {
+               for (let i = 0; i < transfers.length; i++) {
+                  console.log(`${i + 1}. ${transfers[i].transaction_id}`);
+               }
             }
          })
          .catch((error) => console.error(error));
