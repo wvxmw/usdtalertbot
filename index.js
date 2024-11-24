@@ -18,7 +18,7 @@ let lastTransferId = "";
       console.log(lastTransferId);
 
       await fetch(
-         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=&filterTokenValue=1`,
+         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=3&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=&filterTokenValue=1`,
          {
             headers: {
                "TRON-PRO-API-KEY": tsApiKey,
