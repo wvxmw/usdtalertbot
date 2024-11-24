@@ -110,7 +110,7 @@ let lastTimeStamp = "";
          })
          .catch((error) => console.error(error));
       await sleep(interval * 1000);
-      console.log("\n\n");
+      console.log("ㅤ");
    }
 })();
 
