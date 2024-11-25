@@ -8,7 +8,7 @@ const subscribersFileName = "subscribers.json";
 const tsApiKey = process.env.TS_TOKEN;
 const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-const interval = 10;
+const interval = 20;
 const minAmount = 10000;
 const minAmountLow = 3000;
 
