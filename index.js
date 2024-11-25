@@ -8,7 +8,7 @@ const subscribersFileName = "subscribers.json";
 const tsApiKey = process.env.TS_TOKEN;
 const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-const interval = 30;
+const interval = 10;
 const minAmount = 10000;
 const minAmountLow = 3000;
 
@@ -25,7 +25,7 @@ let lastTimeStamp = "";
          }`
       );
       await fetch(
-         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=3&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=${lastTimeStamp}&end_timestamp=&confirm=&filterTokenValue=1`,
+         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=3&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=${lastTimeStamp}&end_timestamp=&confirm=false&filterTokenValue=1`,
          {
             headers: {
                "TRON-PRO-API-KEY": tsApiKey,
