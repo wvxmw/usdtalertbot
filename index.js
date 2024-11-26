@@ -4,11 +4,15 @@ const fetch = require("node-fetch");
 const timestampToDate = require("timestamp-to-date");
 require("dotenv").config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
+
 const subscribersFileName = "subscribers.json";
+const outSubscribersFileName = "outsubscribers.json";
+
 const tsApiKey = process.env.TS_TOKEN;
 const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const outWallet = "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc";
+
 const interval = 10;
 const minAmount = 10000;
 const minAmountLow = 3000;
@@ -16,11 +20,14 @@ const minAmountLow = 3000;
 let lastTransferId = "";
 let lastTimeStamp = "";
 
+let lastOutId = "";
+let lastOutTimeStamp = "";
+
 (async () => {
    while (true) {
-      console.log("Последнее ID " + lastTransferId);
+      console.log("Последнее ID пополнения " + lastTransferId);
       console.log(
-         `Последнее время ${
+         `Последнее время пополнения ${
             lastTimeStamp &&
             timestampToDate(lastTimeStamp, "dd.MM.yyyy HH:mm:ss")
          }`
@@ -110,6 +117,73 @@ let lastTimeStamp = "";
             }
          })
          .catch((error) => console.error(error));
+
+      console.log("Последнее ID вывода " + lastOutId);
+      console.log(
+         `Последнее время вывода ${
+            lastOutTimeStamp &&
+            timestampToDate(lastOutTimeStamp, "dd.MM.yyyy HH:mm:ss")
+         }`
+      );
+      await fetch(
+         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=20&start=0&fromAddress=${wallet}&toAddress=${outWallet}&contract_address=${contract_address}&start_timestamp=${lastOutTimeStamp}&end_timestamp=&confirm=false&filterTokenValue=1`,
+         {
+            headers: {
+               "TRON-PRO-API-KEY": tsApiKey,
+            },
+         }
+      )
+         .then((response) => response.json())
+         .then(async (data) => {
+            const outs = data.token_transfers;
+            if (lastOutId !== "" && outs.length > 0) {
+               if (lastOutId !== outs[0].transaction_id) {
+                  const outSubscribers = await JSON.parse(
+                     fs.readFileSync(outSubscribersFileName, {
+                        encoding: "utf8",
+                     })
+                  );
+                  let maxI = outs.length - 1;
+                  for (let i = 0; i < outs.length; i++) {
+                     if (outs[i].transaction_id === lastOutId) {
+                        maxI = i - 1;
+                     }
+                  }
+                  for (let i = maxI; i >= 0; i--) {
+                     if (outs[i].transaction_id !== lastOutId) {
+                        for (let subscriber in outSubscribers) {
+                           await bot.telegram.sendMessage(
+                              outSubscribers[subscriber],
+                              `Новый вывод\nСумма: ${(
+                                 outs[i].quant / 1000000
+                              ).toFixed(1)}\nДата: ${timestampToDate(
+                                 outs[i].block_ts,
+                                 "HH:mm:ss dd.MM.yyyy"
+                              )}\nКошелек: ${outs[i].to_address.slice(
+                                 0,
+                                 4
+                              )}***${outs[i].to_address.slice(-4)}`
+                           );
+                           await sleep(300);
+                        }
+                     }
+                  }
+                  lastOutId = outs[0].transaction_id;
+                  lastOutTimeStamp = outs[0].block_ts;
+               }
+            } else {
+               if (outs.length > 0) {
+                  lastOutId = outs[0].transaction_id;
+                  lastOutTimeStamp = outs[0].block_ts;
+               }
+            }
+            if (outs) {
+               for (let i = 0; i < outs.length; i++) {
+                  console.log(`${i + 1}. ${outs[i].transaction_id}`);
+               }
+            }
+         })
+         .catch((error) => console.error(error));
       await sleep(interval * 1000);
       console.log(" ");
    }
@@ -141,7 +215,7 @@ bot.on("message", async (ctx) => {
             }
          })
          .catch(async (error) => await ctx.reply("Что-то пошло не так"));
-   } else if (ctx.message.text.trim() === "/subscribe") {
+   } else if (ctx.message.text.trim() === "/sub") {
       const chatId = ctx.message.chat.id;
       let data = JSON.parse(
          fs.readFileSync(subscribersFileName, { encoding: "utf8" })
@@ -163,7 +237,7 @@ bot.on("message", async (ctx) => {
             await ctx.reply("Что-то пошло не так");
          }
       }
-   } else if (ctx.message.text.trim() === "/unsubscribe") {
+   } else if (ctx.message.text.trim() === "/unsub") {
       const chatId = ctx.message.chat.id;
       const data = JSON.parse(
          fs.readFileSync(subscribersFileName, { encoding: "utf8" })
@@ -185,9 +259,53 @@ bot.on("message", async (ctx) => {
       } else {
          await ctx.reply("Вы ещё не подписаны на рассылку");
       }
+   } else if (ctx.message.text.trim() === "/outsub") {
+      const chatId = ctx.message.chat.id;
+      let data = JSON.parse(
+         fs.readFileSync(outSubscribersFileName, { encoding: "utf8" })
+      );
+      if (chatId in data) {
+         await ctx.reply("Вы уже подписаны на рассылку выводов");
+      } else {
+         data[chatId] = chatId;
+         fs.writeFileSync(outSubscribersFileName, JSON.stringify(data), {
+            encoding: "utf8",
+            flag: "w",
+         });
+         const newData = JSON.parse(
+            fs.readFileSync(outSubscribersFileName, { encoding: "utf8" })
+         );
+         if (chatId in newData) {
+            await ctx.reply("Вы подписались на рассылку выводов");
+         } else {
+            await ctx.reply("Что-то пошло не так");
+         }
+      }
+   } else if (ctx.message.text.trim() === "/outunsub") {
+      const chatId = ctx.message.chat.id;
+      const data = JSON.parse(
+         fs.readFileSync(outSubscribersFileName, { encoding: "utf8" })
+      );
+      if (chatId in data) {
+         delete data[chatId];
+         fs.writeFileSync(outSubscribersFileName, JSON.stringify(data), {
+            encoding: "utf8",
+            flag: "w",
+         });
+         const newData = JSON.parse(
+            fs.readFileSync(outSubscribersFileName, { encoding: "utf8" })
+         );
+         if (chatId in newData) {
+            await ctx.reply("Что-то пошло не так");
+         } else {
+            await ctx.reply("Вы отписались от рассылки выводов");
+         }
+      } else {
+         await ctx.reply("Вы ещё не подписаны на рассылку выводов");
+      }
    } else if (ctx.message.text.trim() === "/out") {
       fetch(
-         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=20&start=0&fromAddress=${wallet}&toAddress=${outWallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=&filterTokenValue=1`,
+         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=20&start=0&fromAddress=${wallet}&toAddress=${outWallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=false&filterTokenValue=1`,
          {
             headers: {
                "TRON-PRO-API-KEY": tsApiKey,
@@ -200,9 +318,11 @@ bot.on("message", async (ctx) => {
             if (transfers.length > 0) {
                let message = "";
                for (let transfer of transfers) {
-                  message += `${(transfer.quant / 1000000).toFixed(1)} USDT ${timestampToDate(
+                  message += `${(transfer.quant / 1000000).toFixed(
+                     1
+                  )} USDT ${timestampToDate(
                      transfer.block_ts,
-                     "dd.MM HH:mm:ss"
+                     "HH:mm:ss dd.MM.yyyy"
                   )}\n`;
                }
                await ctx.reply(message);
