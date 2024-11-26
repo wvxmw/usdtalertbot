@@ -8,6 +8,7 @@ const subscribersFileName = "subscribers.json";
 const tsApiKey = process.env.TS_TOKEN;
 const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+const outWallet = "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc";
 const interval = 10;
 const minAmount = 10000;
 const minAmountLow = 3000;
@@ -184,6 +185,30 @@ bot.on("message", async (ctx) => {
       } else {
          await ctx.reply("Вы ещё не подписаны на рассылку");
       }
+   } else if (ctx.message.text.trim() === "/out") {
+      fetch(
+         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=20&start=0&fromAddress=${wallet}&toAddress=${outWallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=&filterTokenValue=1`,
+         {
+            headers: {
+               "TRON-PRO-API-KEY": tsApiKey,
+            },
+         }
+      )
+         .then((response) => response.json())
+         .then(async (data) => {
+            const transfers = data.token_transfers;
+            if (transfers.length > 0) {
+               let message = "";
+               for (let transfer of transfers) {
+                  message += `${(transfer.quant / 1000000).toFixed(1)} USDT ${timestampToDate(
+                     transfer.block_ts,
+                     "dd.MM HH:mm:ss"
+                  )}\n`;
+               }
+               await ctx.reply(message);
+            } else await ctx.reply("Выводов не найдено");
+         })
+         .catch(async (error) => await ctx.reply("Что-то пошло не так"));
    }
 });
 bot.launch();
