@@ -90,7 +90,10 @@ let lastOutTimeStamp = "";
                            for (let subscriber in subscribers) {
                               await bot.telegram.sendMessage(
                                  subscribers[subscriber],
-                                 `Пополнение: ${transferAmount} USDT${
+                                 `Пополнение: ${transferAmount} USDT\nВремя: ${timestampToDate(
+                                    transfers[i].block_ts,
+                                    "HH:mm:ss"
+                                 )}${
                                     newAmount !== null
                                        ? `\nНовый баланс: ${newAmount} USDT`
                                        : ""
