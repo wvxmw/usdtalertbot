@@ -33,7 +33,7 @@ let lastOutTimeStamp = "";
          }`
       );
       await fetch(
-         `https://api.trongrid.io/v1/accounts/${wallet}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${lastTimeStamp}&only_confirmed=true&only_to=true`
+         `https://api.trongrid.io/v1/accounts/${wallet}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${lastTimeStamp}&only_to=true`
       )
          .then((response) => response.json())
          .then(async (data) => {
