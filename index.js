@@ -33,7 +33,7 @@ let lastOutTimeStamp = "";
          }`
       );
       await fetch(
-         `https://api.trongrid.io/v1/accounts/${wallet}/transactions/trc20?limit=10&contract_address=${contract_address}&min_timestamp=${lastTimeStamp}&only_confirmed=true&only_to=true`
+         `https://api.trongrid.io/v1/accounts/${wallet}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${lastTimeStamp}&only_confirmed=true&only_to=true`
       )
          .then((response) => response.json())
          .then(async (data) => {
@@ -42,23 +42,21 @@ let lastOutTimeStamp = "";
             if (lastTransferId !== "" && transfers.length > 0) {
                if (lastTransferId !== transfers[0].transaction_id) {
                   let newAmount = null;
-                  await fetch(
-                     `https://apilist.tronscanapi.com/api/accountv2?address=${wallet}`,
-                     {
-                        headers: {
-                           "TRON-PRO-API-KEY": tsApiKey,
-                        },
-                     }
-                  )
+                  await fetch(`https://api.trongrid.io/v1/accounts/${wallet}`)
                      .then((response) => response.json())
                      .then(async (data) => {
-                        for (token of data.withPriceTokens) {
-                           if (
-                              token.tokenAbbr === "USDT" &&
-                              token.tokenType === "trc20"
-                           ) {
-                              newAmount = (token.balance / 1000000).toFixed(0);
-                              break;
+                        if (data.data.length > 0) {
+                           if (data.data[0].trc20.length > 0) {
+                              for (let el of data.data[0].trc20) {
+                                 for (let token in el) {
+                                    if (token === contract_address) {
+                                       newAmount = (
+                                          el[token] / 1000000
+                                       ).toFixed(0);
+                                       break;
+                                    }
+                                 }
+                              }
                            }
                         }
                      })
@@ -189,26 +187,33 @@ let lastOutTimeStamp = "";
 bot.on("message", async (ctx) => {
    if (!ctx.message.text) return;
    if (ctx.message.text.trim() === "/balance") {
-      fetch(`https://apilist.tronscanapi.com/api/accountv2?address=${wallet}`, {
-         headers: {
-            "TRON-PRO-API-KEY": tsApiKey,
-         },
-      })
+      fetch(`https://api.trongrid.io/v1/accounts/${wallet}`)
          .then((response) => response.json())
          .then(async (data) => {
-            let tokenName = "";
-            let tokenBalance = "";
-            for (token of data.withPriceTokens) {
-               if (token.tokenAbbr === "USDT" && token.tokenType === "trc20") {
-                  tokenName = token.tokenAbbr;
-                  tokenBalance = (token.balance / 1000000).toFixed(0);
-                  break;
+            if (data.data.length > 0) {
+               if (data.data[0].trc20.length > 0) {
+                  let findUsdt = false;
+                  for (let el of data.data[0].trc20) {
+                     for (let token in el) {
+                        if (token === contract_address) {
+                           await ctx.reply(
+                              `Баланс кошелька: ${(el[token] / 1000000).toFixed(
+                                 0
+                              )} USDT`
+                           );
+                           findUsdt = true;
+                           break;
+                        }
+                     }
+                  }
+                  if (!findUsdt) {
+                     await ctx.reply("USDT не найдено");
+                  }
+               } else {
+                  await ctx.reply("Ошибка получения баланса");
                }
-            }
-            if (tokenName !== "" && tokenBalance !== "") {
-               await ctx.reply(`Баланс кошелька: ${tokenBalance} ${tokenName}`);
             } else {
-               await ctx.reply("USDT не найдено");
+               await ctx.reply("Ошибка получения баланса");
             }
          })
          .catch(async (error) => await ctx.reply("Что-то пошло не так"));
