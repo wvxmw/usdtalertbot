@@ -33,16 +33,11 @@ let lastOutTimeStamp = "";
          }`
       );
       await fetch(
-         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=3&start=0&toAddress=${wallet}&contract_address=${contract_address}&start_timestamp=${lastTimeStamp}&end_timestamp=&confirm=&filterTokenValue=1`,
-         {
-            headers: {
-               "TRON-PRO-API-KEY": tsApiKey,
-            },
-         }
+         `https://api.trongrid.io/v1/accounts/${wallet}/transactions/trc20?limit=10&contract_address=${contract_address}&min_timestamp=${lastTimeStamp}&only_confirmed=true&only_to=true`
       )
          .then((response) => response.json())
          .then(async (data) => {
-            const transfers = data.token_transfers;
+            const transfers = data.data;
 
             if (lastTransferId !== "" && transfers.length > 0) {
                if (lastTransferId !== transfers[0].transaction_id) {
@@ -80,7 +75,7 @@ let lastOutTimeStamp = "";
                   for (let i = maxI; i >= 0; i--) {
                      if (transfers[i].transaction_id !== lastTransferId) {
                         const transferAmount = (
-                           transfers[i].quant / 1000000
+                           transfers[i].value / 1000000
                         ).toFixed(0);
                         if (
                            transferAmount >= minAmount ||
@@ -91,7 +86,7 @@ let lastOutTimeStamp = "";
                               await bot.telegram.sendMessage(
                                  subscribers[subscriber],
                                  `Пополнение: ${transferAmount} USDT\nВремя: ${timestampToDate(
-                                    transfers[i].block_ts,
+                                    transfers[i].block_timestamp,
                                     "HH:mm:ss"
                                  )}${
                                     newAmount !== null
@@ -105,12 +100,12 @@ let lastOutTimeStamp = "";
                      }
                   }
                   lastTransferId = transfers[0].transaction_id;
-                  lastTimeStamp = transfers[0].block_ts;
+                  lastTimeStamp = transfers[0].block_timestamp;
                }
             } else {
                if (transfers.length > 0) {
                   lastTransferId = transfers[0].transaction_id;
-                  lastTimeStamp = transfers[0].block_ts;
+                  lastTimeStamp = transfers[0].block_timestamp;
                }
             }
             if (transfers) {
@@ -120,7 +115,7 @@ let lastOutTimeStamp = "";
             }
          })
          .catch((error) => console.error(error));
-      await sleep(interval * 1000);
+      await sleep(1000);
 
       console.log("Последнее ID вывода " + lastOutId);
       console.log(
@@ -130,16 +125,11 @@ let lastOutTimeStamp = "";
          }`
       );
       await fetch(
-         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=20&start=0&fromAddress=${wallet}&toAddress=${outWallet}&contract_address=${contract_address}&start_timestamp=${lastOutTimeStamp}&end_timestamp=&confirm=false&filterTokenValue=1`,
-         {
-            headers: {
-               "TRON-PRO-API-KEY": tsApiKey,
-            },
-         }
+         `https://api.trongrid.io/v1/accounts/${outWallet}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${lastOutTimeStamp}&only_to=true`
       )
          .then((response) => response.json())
          .then(async (data) => {
-            const outs = data.token_transfers;
+            const outs = data.data;
             if (lastOutId !== "" && outs.length > 0) {
                if (lastOutId !== outs[0].transaction_id) {
                   const outSubscribers = await JSON.parse(
@@ -154,31 +144,33 @@ let lastOutTimeStamp = "";
                      }
                   }
                   for (let i = maxI; i >= 0; i--) {
-                     if (outs[i].transaction_id !== lastOutId) {
+                     if (
+                        outs[i].transaction_id !== lastOutId &&
+                        outs[i].from === wallet
+                     ) {
                         for (let subscriber in outSubscribers) {
                            await bot.telegram.sendMessage(
                               outSubscribers[subscriber],
                               `Новый вывод\nСумма: ${(
-                                 outs[i].quant / 1000000
+                                 outs[i].value / 1000000
                               ).toFixed(1)}\nДата: ${timestampToDate(
-                                 outs[i].block_ts,
+                                 outs[i].block_timestamp,
                                  "HH:mm:ss dd.MM.yyyy"
-                              )}\nКошелек: ${outs[i].to_address.slice(
-                                 0,
-                                 4
-                              )}***${outs[i].to_address.slice(-4)}`
+                              )}\nКошелек: ${outs[i].to.slice(0, 4)}***${outs[
+                                 i
+                              ].to.slice(-4)}`
                            );
                            await sleep(300);
                         }
                      }
                   }
                   lastOutId = outs[0].transaction_id;
-                  lastOutTimeStamp = outs[0].block_ts;
+                  lastOutTimeStamp = outs[0].block_timestamp;
                }
             } else {
                if (outs.length > 0) {
                   lastOutId = outs[0].transaction_id;
-                  lastOutTimeStamp = outs[0].block_ts;
+                  lastOutTimeStamp = outs[0].block_timestamp;
                }
             }
             if (outs) {
@@ -309,25 +301,22 @@ bot.on("message", async (ctx) => {
       }
    } else if (ctx.message.text.trim() === "/out") {
       fetch(
-         `https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=20&start=0&fromAddress=${wallet}&toAddress=${outWallet}&contract_address=${contract_address}&start_timestamp=&end_timestamp=&confirm=false&filterTokenValue=1`,
-         {
-            headers: {
-               "TRON-PRO-API-KEY": tsApiKey,
-            },
-         }
+         `https://api.trongrid.io/v1/accounts/${outWallet}/transactions/trc20?limit=20&contract_address=${contract_address}&only_to=true`
       )
          .then((response) => response.json())
          .then(async (data) => {
-            const transfers = data.token_transfers;
+            const transfers = data.data;
             if (transfers.length > 0) {
                let message = "";
                for (let transfer of transfers) {
-                  message += `${(transfer.quant / 1000000).toFixed(
-                     1
-                  )} USDT ${timestampToDate(
-                     transfer.block_ts,
-                     "HH:mm:ss dd.MM.yyyy"
-                  )}\n`;
+                  if (transfer.from === wallet) {
+                     message += `${(transfer.value / 1000000).toFixed(
+                        1
+                     )} USDT ${timestampToDate(
+                        transfer.block_timestamp,
+                        "HH:mm:ss dd.MM.yyyy"
+                     )}\n`;
+                  }
                }
                await ctx.reply(message);
             } else await ctx.reply("Выводов не найдено");
