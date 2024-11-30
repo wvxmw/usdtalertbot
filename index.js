@@ -13,7 +13,7 @@ const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const outWallet = "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc";
 
-const interval = 10;
+const interval = 5;
 const minAmount = 10000;
 const minAmountLow = 3000;
 
