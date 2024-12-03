@@ -94,44 +94,44 @@ let lastOutTimeStamp = "";
                               );
                               await sleep(100);
                            }
-                           setTimeout(async () => {
-                              await fetch(
-                                 `https://api.trongrid.io/v1/accounts/${wallet}`
-                              )
-                                 .then((response) => response.json())
-                                 .then(async (data) => {
-                                    if (data.data.length > 0) {
-                                       if (data.data[0].trc20.length > 0) {
-                                          for (let el of data.data[0].trc20) {
-                                             for (let token in el) {
-                                                if (
-                                                   token === contract_address
-                                                ) {
-                                                   for (let subscriber in subscribers) {
-                                                      await bot.telegram.sendMessage(
-                                                         subscribers[
-                                                            subscriber
-                                                         ],
-                                                         `Баланс кошелька: ${(
-                                                            el[token] / 1000000
-                                                         ).toFixed(0)}`
-                                                      );
-                                                      await sleep(100);
-                                                   }
-                                                   break;
-                                                }
-                                             }
-                                          }
-                                       }
-                                    }
-                                 })
-                                 .catch(async (error) => {});
-                           }, 60000);
                         }
                      }
                   }
                   lastTransferId = transfers[0].transaction_id;
                   lastTimeStamp = transfers[0].block_timestamp;
+						setTimeout(async () => {
+							await fetch(
+								`https://api.trongrid.io/v1/accounts/${wallet}`
+							)
+								.then((response) => response.json())
+								.then(async (data) => {
+									if (data.data.length > 0) {
+										if (data.data[0].trc20.length > 0) {
+											for (let el of data.data[0].trc20) {
+												for (let token in el) {
+													if (
+														token === contract_address
+													) {
+														for (let subscriber in subscribers) {
+															await bot.telegram.sendMessage(
+																subscribers[
+																	subscriber
+																],
+																`Баланс кошелька: ${(
+																	el[token] / 1000000
+																).toFixed(0)}`
+															);
+															await sleep(100);
+														}
+														break;
+													}
+												}
+											}
+										}
+									}
+								})
+								.catch(async (error) => {});
+						}, 60000);
                }
             } else {
                if (transfers.length > 0) {
