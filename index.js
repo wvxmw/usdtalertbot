@@ -13,7 +13,7 @@ const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const outWallet = "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc";
 
-const interval = 5;
+const interval = 3;
 const minAmount = 10000;
 const minAmountLow = 3000;
 
@@ -92,8 +92,41 @@ let lastOutTimeStamp = "";
                                        : ""
                                  }`
                               );
-                              await sleep(300);
+                              await sleep(100);
                            }
+                           setTimeout(async () => {
+                              await fetch(
+                                 `https://api.trongrid.io/v1/accounts/${wallet}`
+                              )
+                                 .then((response) => response.json())
+                                 .then(async (data) => {
+                                    if (data.data.length > 0) {
+                                       if (data.data[0].trc20.length > 0) {
+                                          for (let el of data.data[0].trc20) {
+                                             for (let token in el) {
+                                                if (
+                                                   token === contract_address
+                                                ) {
+                                                   for (let subscriber in subscribers) {
+                                                      await bot.telegram.sendMessage(
+                                                         subscribers[
+                                                            subscriber
+                                                         ],
+                                                         `Баланс кошелька: ${(
+                                                            el[token] / 1000000
+                                                         ).toFixed(0)}`
+                                                      );
+                                                      await sleep(100);
+                                                   }
+                                                   break;
+                                                }
+                                             }
+                                          }
+                                       }
+                                    }
+                                 })
+                                 .catch(async (error) => {});
+                           }, 60000);
                         }
                      }
                   }
@@ -113,7 +146,7 @@ let lastOutTimeStamp = "";
             }
          })
          .catch((error) => console.error(error));
-      await sleep(1000);
+      await sleep(500);
       console.log(" ");
 
       console.log("Последнее ID вывода " + lastOutId);
@@ -159,7 +192,7 @@ let lastOutTimeStamp = "";
                                  i
                               ].to.slice(-4)}`
                            );
-                           await sleep(300);
+                           await sleep(100);
                         }
                      }
                   }
