@@ -147,7 +147,7 @@ let lastOutTimeStamp = "";
             }
          })
          .catch((error) => console.error(error));
-      await sleep(500);
+      await sleep(100);
       console.log(" ");
 
       console.log("Последнее ID вывода " + lastOutId);
