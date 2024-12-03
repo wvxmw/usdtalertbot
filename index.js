@@ -42,6 +42,7 @@ let lastOutTimeStamp = "";
             if (lastTransferId !== "" && transfers.length > 0) {
                if (lastTransferId !== transfers[0].transaction_id) {
                   let newAmount = null;
+                  await sleep(100);
                   await fetch(`https://api.trongrid.io/v1/accounts/${wallet}`)
                      .then((response) => response.json())
                      .then(async (data) => {
