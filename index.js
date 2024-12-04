@@ -51,9 +51,7 @@ let lastOutTimeStamp = "";
                               for (let el of data.data[0].trc20) {
                                  for (let token in el) {
                                     if (token === contract_address) {
-                                       newAmount = (
-                                          el[token] / 1000000
-                                       ).toFixed(0);
+                                       newAmount = editedValue(el[token]);
                                        break;
                                     }
                                  }
@@ -74,9 +72,7 @@ let lastOutTimeStamp = "";
                   let isAlert = false;
                   for (let i = maxI; i >= 0; i--) {
                      if (transfers[i].transaction_id !== lastTransferId) {
-                        const transferAmount = (
-                           transfers[i].value / 1000000
-                        ).toFixed(0);
+                        const transferAmount = editedValue(transfers[i].value);
                         if (
                            transferAmount >= minAmount ||
                            (newAmount < minAmount + 10000 &&
@@ -86,12 +82,16 @@ let lastOutTimeStamp = "";
                            for (let subscriber in subscribers) {
                               await bot.telegram.sendMessage(
                                  subscribers[subscriber],
-                                 `🔴🔴🔴🔴🔴\nПополнение: ${transferAmount} USDT\nВремя: ${timestampToDate(
+                                 `🔴🔴🔴🔴🔴\nПополнение: ${stringValue(
+                                    transferAmount
+                                 )} USDT\nВремя: ${timestampToDate(
                                     transfers[i].block_timestamp,
                                     "HH:mm:ss"
                                  )}${
                                     newAmount !== null
-                                       ? `\nНовый баланс: ${newAmount} USDT`
+                                       ? `\nНовый баланс: ${stringValue(
+                                            newAmount
+                                         )} USDT`
                                        : ""
                                  }`
                               );
@@ -117,9 +117,9 @@ let lastOutTimeStamp = "";
                                              for (let subscriber in subscribers) {
                                                 await bot.telegram.sendMessage(
                                                    subscribers[subscriber],
-                                                   `Баланс кошелька: ${(
-                                                      el[token] / 1000000
-                                                   ).toFixed(0)}`
+                                                   `Баланс кошелька: ${stringValue(
+                                                      editedValue(el[token])
+                                                   )} USDT`
                                                 );
                                                 await sleep(100);
                                              }
@@ -184,9 +184,9 @@ let lastOutTimeStamp = "";
                         for (let subscriber in outSubscribers) {
                            await bot.telegram.sendMessage(
                               outSubscribers[subscriber],
-                              `Новый вывод\nСумма: ${(
-                                 outs[i].value / 1000000
-                              ).toFixed(1)}\nДата: ${timestampToDate(
+                              `Новый вывод\nСумма: ${stringValue(
+                                 editedValue(outs[i].value, 1)
+                              )}\nДата: ${timestampToDate(
                                  outs[i].block_timestamp,
                                  "HH:mm:ss dd.MM.yyyy"
                               )}\nКошелек: ${outs[i].to.slice(0, 4)}***${outs[
@@ -231,8 +231,8 @@ bot.on("message", async (ctx) => {
                      for (let token in el) {
                         if (token === contract_address) {
                            await ctx.reply(
-                              `Баланс кошелька: ${(el[token] / 1000000).toFixed(
-                                 0
+                              `Баланс кошелька: ${stringValue(
+                                 editedValue(el[token])
                               )} USDT`
                            );
                            findUsdt = true;
@@ -350,8 +350,8 @@ bot.on("message", async (ctx) => {
                let message = "";
                for (let transfer of transfers) {
                   if (transfer.from === wallet) {
-                     message += `${(transfer.value / 1000000).toFixed(
-                        1
+                     message += `${stringValue(
+                        editedValue(transfer.value, 1)
                      )} USDT ${timestampToDate(
                         transfer.block_timestamp,
                         "HH:mm:ss dd.MM.yyyy"
@@ -368,6 +368,21 @@ bot.launch();
 
 function sleep(ms) {
    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function editedValue(value, decimalPlaces = 0) {
+   return (value / 1000000).toFixed(decimalPlaces);
+}
+
+/*************  ✨ Codeium Command ⭐  *************/
+/**
+ * Format a number as a string with spaces as thousands separators
+ * @param {number} value The number to format
+ * @returns {string} The formatted string
+ */
+/******  073fcbd3-631d-490c-a6df-dd7f456abd52  *******/
+function stringValue(value) {
+   return value.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1 ");
 }
 
 // Enable graceful stop
