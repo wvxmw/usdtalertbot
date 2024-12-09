@@ -15,7 +15,7 @@ const outWallet = "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc";
 
 const interval = 3;
 const minAmount = 10000;
-const minAmountLow = 2000;
+const minAmountLow = 1000;
 
 let lastTransferId = "";
 let lastTimeStamp = "";
