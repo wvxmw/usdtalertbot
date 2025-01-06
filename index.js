@@ -6,9 +6,7 @@ const { timeStamp } = require("console");
 require("dotenv").config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-const tsApiKey = process.env.TS_TOKEN;
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-
 const interval = 3;
 
 const mainWallet = {
