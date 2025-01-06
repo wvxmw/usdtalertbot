@@ -12,7 +12,7 @@ const interval = 3;
 const mainWallet = {
    address: "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X",
    deposit: {
-      id: "6ff59b42a3472ed9becc86a16494215820134d99369267cd388e39cb9adadd27",
+      id: "",
       timeStamp: "",
       infoText: "эйфории",
       subFile: "subscribers.json",
