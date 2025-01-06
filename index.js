@@ -2,217 +2,79 @@ const { Telegraf, Markup } = require("telegraf");
 const fs = require("fs");
 const fetch = require("node-fetch");
 const timestampToDate = require("timestamp-to-date");
+const { timeStamp } = require("console");
 require("dotenv").config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-const subscribersFileName = "subscribers.json";
-const outSubscribersFileName = "outsubscribers.json";
-
 const tsApiKey = process.env.TS_TOKEN;
-const wallet = "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X";
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-const outWallet = "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc";
 
 const interval = 3;
-const minAmount = 10000;
-const minAmountLow = 1000;
 
-let lastTransferId = "";
-let lastTimeStamp = "";
+const mainWallet = {
+   address: "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X",
+   deposit: {
+      id: "6ff59b42a3472ed9becc86a16494215820134d99369267cd388e39cb9adadd27",
+      timeStamp: "",
+      infoText: "эйфории",
+      subFile: "subscribers.json",
+      minAmount: 1000,
+		showFrom: false,
+   },
+   out: {
+      id: "",
+      timeStamp: "",
+      infoText: "",
+      subFile: "",
+   },
+   signs: "🔴🔴🔴🔴🔴",
+};
 
-let lastOutId = "";
-let lastOutTimeStamp = "";
+const ourWallet = {
+   address: "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc",
+   deposit: {
+      id: "",
+      timeStamp: "",
+      infoText: "нашего кошелька",
+      subFile: "outsubscribers.json",
+      minAmount: 0,
+		showFrom: false,
+   },
+   out: {
+      id: "",
+      timeStamp: "",
+      infoText: "",
+      subFile: "",
+   },
+   signs: "✅✅✅✅✅",
+};
+
+const padWallet = {
+   address: "TAVU6HYWn5Rh85DqEcXTRLLXUt8eA34hCo",
+   deposit: {
+      id: "",
+      timeStamp: "",
+      infoText: "прокладки",
+      subFile: "padsubscribers.json",
+      minAmount: 1000,
+		showFrom: false,
+   },
+   out: {
+      id: "",
+      timeStamp: "",
+      infoText: "прокладки",
+      subFile: "padoutsubscribers.json",
+   },
+   signs: "",
+};
 
 (async () => {
    while (true) {
-      console.log("Последнее ID пополнения " + lastTransferId);
-      console.log(
-         `Последнее время пополнения ${
-            lastTimeStamp &&
-            timestampToDate(lastTimeStamp, "dd.MM.yyyy HH:mm:ss")
-         }`
-      );
-      await fetch(
-         `https://api.trongrid.io/v1/accounts/${wallet}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${lastTimeStamp}&only_to=true`
-      )
-         .then((response) => response.json())
-         .then(async (data) => {
-            const transfers = data.data;
+      await checkDeposit(mainWallet, true);
+      await checkDeposit(ourWallet);
+      await checkDeposit(padWallet);
+      await checkOut(padWallet);
 
-            if (lastTransferId !== "" && transfers.length > 0) {
-               if (lastTransferId !== transfers[0].transaction_id) {
-                  let newAmount = null;
-                  await sleep(100);
-                  await fetch(`https://api.trongrid.io/v1/accounts/${wallet}`)
-                     .then((response) => response.json())
-                     .then(async (data) => {
-                        if (data.data.length > 0) {
-                           if (data.data[0].trc20.length > 0) {
-                              for (let el of data.data[0].trc20) {
-                                 for (let token in el) {
-                                    if (token === contract_address) {
-                                       newAmount = editedValue(el[token]);
-                                       break;
-                                    }
-                                 }
-                              }
-                           }
-                        }
-                     })
-                     .catch(async (error) => {});
-                  const subscribers = await JSON.parse(
-                     fs.readFileSync(subscribersFileName, { encoding: "utf8" })
-                  );
-                  let maxI = transfers.length - 1;
-                  for (let i = 0; i < transfers.length; i++) {
-                     if (transfers[i].transaction_id === lastTransferId) {
-                        maxI = i - 1;
-                     }
-                  }
-                  let isAlert = false;
-                  for (let i = maxI; i >= 0; i--) {
-                     if (transfers[i].transaction_id !== lastTransferId) {
-                        const transferAmount = editedValue(transfers[i].value);
-                        if (
-                           transferAmount >= minAmount ||
-                           (newAmount < minAmount + 10000 &&
-                              transferAmount > minAmountLow)
-                        ) {
-                           isAlert = true;
-                           for (let subscriber in subscribers) {
-                              await bot.telegram.sendMessage(
-                                 subscribers[subscriber],
-                                 `🔴🔴🔴🔴🔴\nПополнение: ${stringValue(
-                                    transferAmount
-                                 )} USDT\nВремя: ${timestampToDate(
-                                    transfers[i].block_timestamp,
-                                    "HH:mm:ss"
-                                 )}${
-                                    newAmount !== null
-                                       ? `\nНовый баланс: ${stringValue(
-                                            newAmount
-                                         )} USDT`
-                                       : ""
-                                 }`
-                              );
-                              await sleep(100);
-                           }
-                        }
-                     }
-                  }
-                  lastTransferId = transfers[0].transaction_id;
-                  lastTimeStamp = transfers[0].block_timestamp;
-                  if (isAlert) {
-                     setTimeout(async () => {
-                        await fetch(
-                           `https://api.trongrid.io/v1/accounts/${wallet}`
-                        )
-                           .then((response) => response.json())
-                           .then(async (data) => {
-                              if (data.data.length > 0) {
-                                 if (data.data[0].trc20.length > 0) {
-                                    for (let el of data.data[0].trc20) {
-                                       for (let token in el) {
-                                          if (token === contract_address) {
-                                             for (let subscriber in subscribers) {
-                                                await bot.telegram.sendMessage(
-                                                   subscribers[subscriber],
-                                                   `Баланс кошелька: ${stringValue(
-                                                      editedValue(el[token])
-                                                   )} USDT`
-                                                );
-                                                await sleep(100);
-                                             }
-                                             break;
-                                          }
-                                       }
-                                    }
-                                 }
-                              }
-                           })
-                           .catch(async (error) => {});
-                     }, 60000);
-                  }
-               }
-            } else {
-               if (transfers.length > 0) {
-                  lastTransferId = transfers[0].transaction_id;
-                  lastTimeStamp = transfers[0].block_timestamp;
-               }
-            }
-            if (transfers) {
-               for (let i = 0; i < transfers.length; i++) {
-                  console.log(`${i + 1}. ${transfers[i].transaction_id}`);
-               }
-            }
-         })
-         .catch((error) => console.error(error));
-      await sleep(100);
-      console.log(" ");
-
-      console.log("Последнее ID вывода " + lastOutId);
-      console.log(
-         `Последнее время вывода ${
-            lastOutTimeStamp &&
-            timestampToDate(lastOutTimeStamp, "dd.MM.yyyy HH:mm:ss")
-         }`
-      );
-      await fetch(
-         `https://api.trongrid.io/v1/accounts/${outWallet}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${lastOutTimeStamp}&only_to=true`
-      )
-         .then((response) => response.json())
-         .then(async (data) => {
-            const outs = data.data;
-            if (lastOutId !== "" && outs.length > 0) {
-               if (lastOutId !== outs[0].transaction_id) {
-                  const outSubscribers = await JSON.parse(
-                     fs.readFileSync(outSubscribersFileName, {
-                        encoding: "utf8",
-                     })
-                  );
-                  let maxI = outs.length - 1;
-                  for (let i = 0; i < outs.length; i++) {
-                     if (outs[i].transaction_id === lastOutId) {
-                        maxI = i - 1;
-                     }
-                  }
-                  for (let i = maxI; i >= 0; i--) {
-                     if (
-                        outs[i].transaction_id !== lastOutId &&
-                        outs[i].from === wallet
-                     ) {
-                        for (let subscriber in outSubscribers) {
-                           await bot.telegram.sendMessage(
-                              outSubscribers[subscriber],
-                              `Новый вывод\nСумма: ${stringValue(
-                                 editedValue(outs[i].value, 1)
-                              )}\nДата: ${timestampToDate(
-                                 outs[i].block_timestamp,
-                                 "HH:mm:ss dd.MM.yyyy"
-                              )}\nКошелек: ${outs[i].to.slice(0, 4)}***${outs[
-                                 i
-                              ].to.slice(-4)}`
-                           );
-                           await sleep(100);
-                        }
-                     }
-                  }
-                  lastOutId = outs[0].transaction_id;
-                  lastOutTimeStamp = outs[0].block_timestamp;
-               }
-            } else {
-               if (outs.length > 0) {
-                  lastOutId = outs[0].transaction_id;
-                  lastOutTimeStamp = outs[0].block_timestamp;
-               }
-            }
-            if (outs) {
-               for (let i = 0; i < outs.length; i++) {
-                  console.log(`${i + 1}. ${outs[i].transaction_id}`);
-               }
-            }
-         })
-         .catch((error) => console.error(error));
       await sleep(interval * 1000);
       console.log("----------------------------------------------------------");
    }
@@ -221,135 +83,37 @@ let lastOutTimeStamp = "";
 bot.on("message", async (ctx) => {
    if (!ctx.message.text) return;
    if (ctx.message.text.trim() === "/balance") {
-      fetch(`https://api.trongrid.io/v1/accounts/${wallet}`)
-         .then((response) => response.json())
-         .then(async (data) => {
-            if (data.data.length > 0) {
-               if (data.data[0].trc20.length > 0) {
-                  let findUsdt = false;
-                  for (let el of data.data[0].trc20) {
-                     for (let token in el) {
-                        if (token === contract_address) {
-                           await ctx.reply(
-                              `Баланс кошелька: ${stringValue(
-                                 editedValue(el[token])
-                              )} USDT`
-                           );
-                           findUsdt = true;
-                           break;
-                        }
-                     }
-                  }
-                  if (!findUsdt) {
-                     await ctx.reply("USDT не найдено");
-                  }
-               } else {
-                  await ctx.reply("Ошибка получения баланса");
-               }
-            } else {
-               await ctx.reply("Ошибка получения баланса");
-            }
-         })
-         .catch(async (error) => await ctx.reply("Что-то пошло не так"));
+      checkBalance(ctx, mainWallet);
+   } else if (ctx.message.text.trim() === "/padbalance") {
+      checkBalance(ctx, padWallet);
    } else if (ctx.message.text.trim() === "/sub") {
-      const chatId = ctx.message.chat.id;
-      let data = JSON.parse(
-         fs.readFileSync(subscribersFileName, { encoding: "utf8" })
-      );
-      if (chatId in data) {
-         await ctx.reply("Вы уже подписаны на рассылку");
-      } else {
-         data[chatId] = chatId;
-         fs.writeFileSync(subscribersFileName, JSON.stringify(data), {
-            encoding: "utf8",
-            flag: "w",
-         });
-         const newData = JSON.parse(
-            fs.readFileSync(subscribersFileName, { encoding: "utf8" })
-         );
-         if (chatId in newData) {
-            await ctx.reply("Вы подписались на рассылку");
-         } else {
-            await ctx.reply("Что-то пошло не так");
-         }
-      }
+      sub(ctx, mainWallet.deposit.subFile, "пополнений");
    } else if (ctx.message.text.trim() === "/unsub") {
-      const chatId = ctx.message.chat.id;
-      const data = JSON.parse(
-         fs.readFileSync(subscribersFileName, { encoding: "utf8" })
-      );
-      if (chatId in data) {
-         delete data[chatId];
-         fs.writeFileSync(subscribersFileName, JSON.stringify(data), {
-            encoding: "utf8",
-            flag: "w",
-         });
-         const newData = JSON.parse(
-            fs.readFileSync(subscribersFileName, { encoding: "utf8" })
-         );
-         if (chatId in newData) {
-            await ctx.reply("Что-то пошло не так");
-         } else {
-            await ctx.reply("Вы отписались от рассылки");
-         }
-      } else {
-         await ctx.reply("Вы ещё не подписаны на рассылку");
-      }
+      unsub(ctx, mainWallet.deposit.subFile, "пополнений");
    } else if (ctx.message.text.trim() === "/outsub") {
-      const chatId = ctx.message.chat.id;
-      let data = JSON.parse(
-         fs.readFileSync(outSubscribersFileName, { encoding: "utf8" })
-      );
-      if (chatId in data) {
-         await ctx.reply("Вы уже подписаны на рассылку выводов");
-      } else {
-         data[chatId] = chatId;
-         fs.writeFileSync(outSubscribersFileName, JSON.stringify(data), {
-            encoding: "utf8",
-            flag: "w",
-         });
-         const newData = JSON.parse(
-            fs.readFileSync(outSubscribersFileName, { encoding: "utf8" })
-         );
-         if (chatId in newData) {
-            await ctx.reply("Вы подписались на рассылку выводов");
-         } else {
-            await ctx.reply("Что-то пошло не так");
-         }
-      }
+      sub(ctx, ourWallet.deposit.subFile, "выводов");
    } else if (ctx.message.text.trim() === "/outunsub") {
-      const chatId = ctx.message.chat.id;
-      const data = JSON.parse(
-         fs.readFileSync(outSubscribersFileName, { encoding: "utf8" })
-      );
-      if (chatId in data) {
-         delete data[chatId];
-         fs.writeFileSync(outSubscribersFileName, JSON.stringify(data), {
-            encoding: "utf8",
-            flag: "w",
-         });
-         const newData = JSON.parse(
-            fs.readFileSync(outSubscribersFileName, { encoding: "utf8" })
-         );
-         if (chatId in newData) {
-            await ctx.reply("Что-то пошло не так");
-         } else {
-            await ctx.reply("Вы отписались от рассылки выводов");
-         }
-      } else {
-         await ctx.reply("Вы ещё не подписаны на рассылку выводов");
-      }
+      unsub(ctx, ourWallet.deposit.subFile, "выводов");
+   } else if (ctx.message.text.trim() === "/padsub") {
+      sub(ctx, padWallet.deposit.subFile, "пополнений прокладки");
+   } else if (ctx.message.text.trim() === "/padunsub") {
+      unsub(ctx, padWallet.deposit.subFile, "пополнений прокладки");
+   } else if (ctx.message.text.trim() === "/padoutsub") {
+      sub(ctx, padWallet.out.subFile, "выводов с прокладки");
+   } else if (ctx.message.text.trim() === "/padoutunsub") {
+      unsub(ctx, padWallet.out.subFile, "выводов с прокладки");
    } else if (ctx.message.text.trim() === "/out") {
       fetch(
-         `https://api.trongrid.io/v1/accounts/${outWallet}/transactions/trc20?limit=20&contract_address=${contract_address}&only_to=true`
+         `https://api.trongrid.io/v1/accounts/${ourWallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&only_to=true`
       )
          .then((response) => response.json())
          .then(async (data) => {
             const transfers = data.data;
             if (transfers.length > 0) {
                let message = "";
+
                for (let transfer of transfers) {
-                  if (transfer.from === wallet) {
+                  if (transfer.from === mainWallet.address) {
                      message += `${stringValue(
                         editedValue(transfer.value, 1)
                      )} USDT ${timestampToDate(
@@ -374,13 +138,280 @@ function editedValue(value, decimalPlaces = 0) {
    return (value / 1000000).toFixed(decimalPlaces);
 }
 
-/*************  ✨ Codeium Command ⭐  *************/
-/**
- * Format a number as a string with spaces as thousands separators
- * @param {number} value The number to format
- * @returns {string} The formatted string
- */
-/******  073fcbd3-631d-490c-a6df-dd7f456abd52  *******/
+async function sub(ctx, file, text) {
+   const chatId = ctx.message.chat.id;
+   let data = JSON.parse(fs.readFileSync(file, { encoding: "utf8" }));
+   if (chatId in data) {
+      await ctx.reply("Вы уже подписаны на рассылку " + text);
+   } else {
+      data[chatId] = chatId;
+      fs.writeFileSync(file, JSON.stringify(data), {
+         encoding: "utf8",
+         flag: "w",
+      });
+      const newData = JSON.parse(fs.readFileSync(file, { encoding: "utf8" }));
+      if (chatId in newData) {
+         await ctx.reply("Вы подписались на рассылку " + text);
+      } else {
+         await ctx.reply("Что-то пошло не так");
+      }
+   }
+}
+
+async function unsub(ctx, file, text) {
+   const chatId = ctx.message.chat.id;
+   const data = JSON.parse(fs.readFileSync(file, { encoding: "utf8" }));
+   if (chatId in data) {
+      delete data[chatId];
+      fs.writeFileSync(file, JSON.stringify(data), {
+         encoding: "utf8",
+         flag: "w",
+      });
+      const newData = JSON.parse(fs.readFileSync(file, { encoding: "utf8" }));
+      if (chatId in newData) {
+         await ctx.reply("Что-то пошло не так");
+      } else {
+         await ctx.reply("Вы отписались от рассылки " + text);
+      }
+   } else {
+      await ctx.reply("Вы ещё не подписаны на рассылку " + text);
+   }
+}
+
+async function checkDeposit(wallet, isNeedAlert = false) {
+   console.log(
+      `Последнее ID пополнения ${wallet.deposit.infoText} ${wallet.deposit.id}`
+   );
+   console.log(
+      `Последнее время пополнения ${wallet.deposit.infoText} ${
+         wallet.deposit.timeStamp &&
+         timestampToDate(wallet.deposit.timeStamp, "dd.MM.yyyy HH:mm:ss")
+      }`
+   );
+
+   await fetch(
+      `https://api.trongrid.io/v1/accounts/${wallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${wallet.deposit.timeStamp}&only_to=true`
+   )
+      .then((response) => response.json())
+      .then(async (data) => {
+         const transfers = data.data;
+         if (wallet.deposit.id !== "" && transfers.length > 0) {
+            if (wallet.deposit.id !== transfers[0].transaction_id) {
+               let newAmount = null;
+               await sleep(10);
+               await fetch(
+                  `https://api.trongrid.io/v1/accounts/${wallet.address}`
+               )
+                  .then((response) => response.json())
+                  .then(async (data) => {
+                     if (data.data.length > 0) {
+                        if (data.data[0].trc20.length > 0) {
+                           for (let el of data.data[0].trc20) {
+                              for (let token in el) {
+                                 if (token === contract_address) {
+                                    newAmount = editedValue(el[token]);
+                                    break;
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  })
+                  .catch(async (error) => {});
+
+               const subscribers = await JSON.parse(
+                  fs.readFileSync(wallet.deposit.subFile, { encoding: "utf8" })
+               );
+               let maxI = transfers.length - 1;
+               for (let i = 0; i < transfers.length; i++) {
+                  if (transfers[i].transaction_id === wallet.deposit.id) {
+                     maxI = i - 1;
+                  }
+               }
+
+               let isAlert = false;
+               for (let i = maxI; i >= 0; i--) {
+                  if (transfers[i].transaction_id !== wallet.deposit.id) {
+                     const transferAmount = editedValue(transfers[i].value);
+                     if (transferAmount >= wallet.deposit.minAmount) {
+                        isAlert = true;
+                        for (let subscriber in subscribers) {
+                           await bot.telegram.sendMessage(
+                              subscribers[subscriber],
+                              `${
+                                 wallet.signs && wallet.signs + "\n"
+                              }Пополнение ${
+                                 wallet.deposit.infoText
+                              } ${wallet.deposit.showFrom ? "\nС кошелька: " + transfers[i].from.slice(0,4)+"***"+transfers[i].from.slice(-4) : ""}\nСумма: ${stringValue(
+                                 transferAmount
+                              )} USDT\nВремя: ${timestampToDate(
+                                 transfers[i].block_timestamp,
+                                 "HH:mm:ss"
+                              )}${
+                                 newAmount !== null
+                                    ? `\nНовый баланс: ${stringValue(
+                                         newAmount
+                                      )} USDT`
+                                    : ""
+                              }`
+                           );
+
+                           await sleep(10);
+                        }
+                     }
+                  }
+               }
+               wallet.deposit.id = transfers[0].transaction_id;
+               wallet.deposit.timeStamp = transfers[0].block_timestamp;
+               if (isAlert && isNeedAlert) {
+                  setTimeout(async () => {
+                     await fetch(
+                        `https://api.trongrid.io/v1/accounts/${wallet.address}`
+                     )
+                        .then((response) => response.json())
+                        .then(async (data) => {
+                           if (data.data.length > 0) {
+                              if (data.data[0].trc20.length > 0) {
+                                 for (let el of data.data[0].trc20) {
+                                    for (let token in el) {
+                                       if (token === contract_address) {
+                                          for (let subscriber in subscribers) {
+                                             await bot.telegram.sendMessage(
+                                                subscribers[subscriber],
+                                                `Баланс ${
+                                                   wallet.deposit.infoText
+                                                }: ${stringValue(
+                                                   editedValue(el[token])
+                                                )} USDT`
+                                             );
+                                             await sleep(10);
+                                          }
+                                          break;
+                                       }
+                                    }
+                                 }
+                              }
+                           }
+                        })
+                        .catch(async (error) => {});
+                  }, 60000);
+               }
+            }
+         } else {
+            if (transfers.length > 0) {
+               wallet.deposit.id = transfers[0].transaction_id;
+               wallet.deposit.timeStamp = transfers[0].block_timestamp;
+            }
+         }
+         if (transfers) {
+            for (let i = 0; i < transfers.length; i++) {
+               console.log(`${i + 1}. ${transfers[i].transaction_id}`);
+            }
+         }
+      })
+      .catch((error) => console.error(error));
+   await sleep(10);
+   console.log(" ");
+}
+
+async function checkOut(wallet) {
+   console.log(`Последнее ID вывода с ${wallet.out.infoText} ${wallet.out.id}`);
+   console.log(
+      `Последнее время вывода с ${wallet.out.infoText} ${
+         wallet.out.timeStamp &&
+         timestampToDate(wallet.out.timeStamp, "dd.MM.yyyy HH:mm:ss")
+      }`
+   );
+   await fetch(
+      `https://api.trongrid.io/v1/accounts/${wallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${wallet.out.timeStamp}&only_from=true`
+   )
+      .then((response) => response.json())
+      .then(async (data) => {
+         const outs = data.data;
+         if (wallet.out.id !== "" && outs.length > 0) {
+            if (wallet.out.id !== outs[0].transaction_id) {
+               const outSubscribers = await JSON.parse(
+                  fs.readFileSync(wallet.out.subFile, {
+                     encoding: "utf8",
+                  })
+               );
+               let maxI = outs.length - 1;
+               for (let i = 0; i < outs.length; i++) {
+                  if (outs[i].transaction_id === wallet.out.id) {
+                     maxI = i - 1;
+                  }
+               }
+               for (let i = maxI; i >= 0; i--) {
+                  if (outs[i].transaction_id !== wallet.out.id) {
+                     for (let subscriber in outSubscribers) {
+                        await bot.telegram.sendMessage(
+                           outSubscribers[subscriber],
+                           `Новый вывод с ${
+                              wallet.out.infoText
+                           }\nНа кошелек: ${outs[i].to.slice(0, 4)}***${outs[
+                              i
+                           ].to.slice(-4)}\nСумма: ${stringValue(
+                              editedValue(outs[i].value)
+                           )}\nВремя: ${timestampToDate(
+                              outs[i].block_timestamp,
+                              "HH:mm:ss"
+                           )}`
+                        );
+                        await sleep(100);
+                     }
+                  }
+               }
+               wallet.out.id = outs[0].transaction_id;
+               wallet.out.timeStamp = outs[0].block_timestamp;
+            }
+         } else {
+            if (outs.length > 0) {
+               wallet.out.id = outs[0].transaction_id;
+               wallet.out.timeStamp = outs[0].block_timestamp;
+            }
+         }
+         if (outs) {
+            for (let i = 0; i < outs.length; i++) {
+               console.log(`${i + 1}. ${outs[i].transaction_id}`);
+            }
+         }
+      })
+      .catch((error) => console.error(error));
+   console.log(" ");
+}
+
+async function checkBalance(ctx, wallet) {
+   fetch(`https://api.trongrid.io/v1/accounts/${wallet.address}`)
+      .then((response) => response.json())
+      .then(async (data) => {
+         if (data.data.length > 0) {
+            if (data.data[0].trc20.length > 0) {
+               let findUsdt = false;
+               for (let el of data.data[0].trc20) {
+                  for (let token in el) {
+                     if (token === contract_address) {
+                        await ctx.reply(
+                           `Баланс ${wallet.deposit.infoText}: ${stringValue(
+                              editedValue(el[token])
+                           )} USDT`
+                        );
+                        findUsdt = true;
+                        break;
+                     }
+                  }
+               }
+               if (!findUsdt) {
+                  await ctx.reply("USDT не найдено");
+               }
+            } else {
+               await ctx.reply("Ошибка получения баланса");
+            }
+         } else {
+            await ctx.reply("Ошибка получения баланса");
+         }
+      })
+      .catch(async (error) => await ctx.reply("Что-то пошло не так"));
+}
 function stringValue(value) {
    return value.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1 ");
 }
@@ -388,3 +419,9 @@ function stringValue(value) {
 // Enable graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
+// if (
+// 	transferAmount >= minAmount ||
+// 	(newAmount < minAmount + 10000 &&
+// 		transferAmount > minAmountLow)
+// ) {}
