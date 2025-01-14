@@ -71,7 +71,7 @@ const padWallet = {
       await checkDeposit(mainWallet, true);
       await checkDeposit(ourWallet);
       await checkDeposit(padWallet);
-
+		await checkOut(padWallet);
       // await sleep(interval * 1000);
       console.log("----------------------------------------------------------");
    }
