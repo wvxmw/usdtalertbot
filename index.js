@@ -17,7 +17,7 @@ const mainWallet = {
       infoText: "эйфории",
       subFile: "subscribers.json",
       minAmount: 1000,
-		showFrom: false,
+      showFrom: false,
    },
    out: {
       id: "",
@@ -36,7 +36,7 @@ const ourWallet = {
       infoText: "нашего кошелька",
       subFile: "outsubscribers.json",
       minAmount: 0,
-		showFrom: false,
+      showFrom: false,
    },
    out: {
       id: "",
@@ -55,7 +55,7 @@ const padWallet = {
       infoText: "прокладки",
       subFile: "padsubscribers.json",
       minAmount: 1000,
-		showFrom: false,
+      showFrom: false,
    },
    out: {
       id: "",
@@ -71,7 +71,7 @@ const padWallet = {
       await checkDeposit(mainWallet, true);
       await checkDeposit(ourWallet);
       await checkDeposit(padWallet);
-		await checkOut(padWallet);
+      await checkOut(padWallet);
       // await sleep(interval * 1000);
       console.log("----------------------------------------------------------");
    }
@@ -237,9 +237,14 @@ async function checkDeposit(wallet, isNeedAlert = false) {
                               subscribers[subscriber],
                               `${
                                  wallet.signs && wallet.signs + "\n"
-                              }Пополнение ${
-                                 wallet.deposit.infoText
-                              } ${wallet.deposit.showFrom ? "\nС кошелька: " + transfers[i].from.slice(0,4)+"***"+transfers[i].from.slice(-4) : ""}\nСумма: ${stringValue(
+                              }Пополнение ${wallet.deposit.infoText} ${
+                                 wallet.deposit.showFrom
+                                    ? "\nС кошелька: " +
+                                      transfers[i].from.slice(0, 4) +
+                                      "***" +
+                                      transfers[i].from.slice(-4)
+                                    : ""
+                              }\nСумма: ${stringValue(
                                  transferAmount
                               )} USDT\nВремя: ${timestampToDate(
                                  transfers[i].block_timestamp,
