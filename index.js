@@ -16,7 +16,7 @@ const mainWallet = {
       timeStamp: "",
       infoText: "эйфории",
       subFile: "subscribers.json",
-      minAmount: 0,
+      minAmount: 1000,
       showFrom: false,
    },
    out: {
