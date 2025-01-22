@@ -8,6 +8,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const interval = 3;
+const mainChatId = "-1002404665258";
 
 const mainWallet = {
    address: "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X",
@@ -216,9 +217,6 @@ async function checkDeposit(wallet, isNeedAlert = false) {
                   })
                   .catch(async (error) => {});
 
-               const subscribers = await JSON.parse(
-                  fs.readFileSync(wallet.deposit.subFile, { encoding: "utf8" })
-               );
                let maxI = transfers.length - 1;
                for (let i = 0; i < transfers.length; i++) {
                   if (transfers[i].transaction_id === wallet.deposit.id) {
@@ -232,34 +230,30 @@ async function checkDeposit(wallet, isNeedAlert = false) {
                      const transferAmount = editedValue(transfers[i].value);
                      if (transferAmount >= wallet.deposit.minAmount) {
                         isAlert = true;
-                        for (let subscriber in subscribers) {
-                           await bot.telegram.sendMessage(
-                              subscribers[subscriber],
-                              `${
-                                 wallet.signs && wallet.signs + "\n"
-                              }Пополнение ${wallet.deposit.infoText} ${
-                                 wallet.deposit.showFrom
-                                    ? "\nС кошелька: " +
-                                      transfers[i].from.slice(0, 4) +
-                                      "***" +
-                                      transfers[i].from.slice(-4)
-                                    : ""
-                              }\nСумма: ${stringValue(
-                                 transferAmount
-                              )} USDT\nВремя: ${timestampToDate(
-                                 transfers[i].block_timestamp,
-                                 "HH:mm:ss"
-                              )}${
-                                 newAmount !== null
-                                    ? `\nНовый баланс: ${stringValue(
-                                         newAmount
-                                      )} USDT`
-                                    : ""
-                              }`
-                           );
-
-                           await sleep(10);
-                        }
+                        await bot.telegram.sendMessage(
+                           mainChatId,
+                           `${wallet.signs && wallet.signs + "\n"}Пополнение ${
+                              wallet.deposit.infoText
+                           } ${
+                              wallet.deposit.showFrom
+                                 ? "\nС кошелька: " +
+                                   transfers[i].from.slice(0, 4) +
+                                   "***" +
+                                   transfers[i].from.slice(-4)
+                                 : ""
+                           }\nСумма: ${stringValue(
+                              transferAmount
+                           )} USDT\nВремя: ${timestampToDate(
+                              transfers[i].block_timestamp,
+                              "HH:mm:ss"
+                           )}${
+                              newAmount !== null
+                                 ? `\nНовый баланс: ${stringValue(
+                                      newAmount
+                                   )} USDT`
+                                 : ""
+                           }`
+                        );
                      }
                   }
                }
@@ -277,17 +271,14 @@ async function checkDeposit(wallet, isNeedAlert = false) {
                                  for (let el of data.data[0].trc20) {
                                     for (let token in el) {
                                        if (token === contract_address) {
-                                          for (let subscriber in subscribers) {
-                                             await bot.telegram.sendMessage(
-                                                subscribers[subscriber],
-                                                `Баланс ${
-                                                   wallet.deposit.infoText
-                                                }: ${stringValue(
-                                                   editedValue(el[token])
-                                                )} USDT`
-                                             );
-                                             await sleep(10);
-                                          }
+                                          await bot.telegram.sendMessage(
+                                             mainChatId,
+                                             `Баланс ${
+                                                wallet.deposit.infoText
+                                             }: ${stringValue(
+                                                editedValue(el[token])
+                                             )} USDT`
+                                          );
                                           break;
                                        }
                                     }
