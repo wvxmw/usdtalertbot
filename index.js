@@ -14,7 +14,7 @@ const mainChatId = "-1002404665258";
 const mainWallet = {
    address: "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X",
    deposit: {
-      id: "8d07cfdd62b048e52dcbd32a171b47eafa41a41dd11c2b04b4fc58d88b3966a2",
+      id: "",
       timeStamp: "",
       infoText: "эйфории",
       subFile: "subscribers.json",
