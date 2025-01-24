@@ -9,11 +9,12 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const interval = 3;
 const mainChatId = "-1002404665258";
-
+// 5509442847
+// -1002404665258
 const mainWallet = {
    address: "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X",
    deposit: {
-      id: "",
+      id: "8d07cfdd62b048e52dcbd32a171b47eafa41a41dd11c2b04b4fc58d88b3966a2",
       timeStamp: "",
       infoText: "эйфории",
       subFile: "subscribers.json",
@@ -70,7 +71,7 @@ const padWallet = {
 (async () => {
    while (true) {
       await checkDeposit(mainWallet, true);
-      await checkDeposit(ourWallet);
+      await checkDeposit(ourWallet, false, false);
       await checkDeposit(padWallet);
       await checkOut(padWallet);
       // await sleep(interval * 1000);
@@ -176,7 +177,7 @@ async function unsub(ctx, file, text) {
    }
 }
 
-async function checkDeposit(wallet, isNeedAlert = false) {
+async function checkDeposit(wallet, isNeedAlert = false, isRound = true) {
    console.log(
       `Последнее ID пополнения ${wallet.deposit.infoText} ${wallet.deposit.id}`
    );
@@ -241,9 +242,9 @@ async function checkDeposit(wallet, isNeedAlert = false) {
                                    "***" +
                                    transfers[i].from.slice(-4)
                                  : ""
-                           }\nСумма: ${stringValue(
+                           }\nСумма: ${isRound? stringValue(
                               transferAmount
-                           )} USDT\nВремя: ${timestampToDate(
+                           ) : stringValue(editedValue(transfers[i].value, 1))} USDT\nВремя: ${timestampToDate(
                               transfers[i].block_timestamp,
                               "HH:mm:ss"
                            )}${
