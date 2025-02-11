@@ -46,7 +46,26 @@ const ourWallet = {
       infoText: "",
       subFile: "",
    },
-   signs: "✅✅✅✅✅",
+   signs: "✅✅✅✅✅ мкс",
+};
+
+const ourWallet2 = {
+   address: "TAMw6Xq8UzUQVCAqN6vZoYjsM65RerNo9x",
+   deposit: {
+      id: "",
+      timeStamp: "",
+      infoText: "нашего кошелька",
+      subFile: "outsubscribers.json",
+      minAmount: 0,
+      showFrom: false,
+   },
+   out: {
+      id: "",
+      timeStamp: "",
+      infoText: "",
+      subFile: "",
+   },
+   signs: "✅✅✅✅✅ о9х",
 };
 
 const padWallet = {
@@ -72,6 +91,7 @@ const padWallet = {
    while (true) {
       await checkDeposit(mainWallet, true);
       await checkDeposit(ourWallet, false, false);
+      await checkDeposit(ourWallet2, false, false);
       await checkDeposit(padWallet);
       await checkOut(padWallet);
       // await sleep(interval * 1000);
