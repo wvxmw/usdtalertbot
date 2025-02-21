@@ -46,7 +46,7 @@ const ourWallet = {
       infoText: "",
       subFile: "",
    },
-   signs: "✅✅✅✅✅ мкс",
+   signs: "✅✅✅✅✅ uv8",
 };
 
 const ourWallet2 = {
