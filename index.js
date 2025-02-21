@@ -31,7 +31,7 @@ const mainWallet = {
 };
 
 const ourWallet = {
-   address: "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc",
+   address: "TNRt31fY4AvuKwBtA6SpxPS2DeSHCoiuv8",
    deposit: {
       id: "",
       timeStamp: "",
@@ -262,9 +262,13 @@ async function checkDeposit(wallet, isNeedAlert = false, isRound = true) {
                                    "***" +
                                    transfers[i].from.slice(-4)
                                  : ""
-                           }\nСумма: ${isRound? stringValue(
-                              transferAmount
-                           ) : stringValue(editedValue(transfers[i].value, 1))} USDT\nВремя: ${timestampToDate(
+                           }\nСумма: ${
+                              isRound
+                                 ? stringValue(transferAmount)
+                                 : stringValue(
+                                      editedValue(transfers[i].value, 1)
+                                   )
+                           } USDT\nВремя: ${timestampToDate(
                               transfers[i].block_timestamp,
                               "HH:mm:ss"
                            )}${
