@@ -31,7 +31,7 @@ const mainWallet = {
 };
 
 const ourWallet = {
-   address: "TNRt31fY4AvuKwBtA6SpxPS2DeSHCoiuv8",
+   address: "TXhyDNCzdC5WMUfqtVbi9zwf7vgsMkMmKc",
    deposit: {
       id: "",
       timeStamp: "",
@@ -46,7 +46,7 @@ const ourWallet = {
       infoText: "",
       subFile: "",
    },
-   signs: "✅✅✅✅✅ uv8",
+   signs: "✅✅✅✅✅ mkc",
 };
 
 const ourWallet2 = {
