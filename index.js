@@ -368,13 +368,13 @@ async function checkDeposit(wallet, isNeedAlert = false, isRound = true) {
 }
 
 async function checkOut(wallet) {
-   console.log(`Последнее ID вывода с ${wallet.out.infoText} ${wallet.out.id}`);
-   console.log(
-      `Последнее время вывода с ${wallet.out.infoText} ${
-         wallet.out.timeStamp &&
-         timestampToDate(wallet.out.timeStamp, "dd.MM.yyyy HH:mm:ss")
-      }`
-   );
+//    console.log(`Последнее ID вывода с ${wallet.out.infoText} ${wallet.out.id}`);
+//    console.log(
+//       `Последнее время вывода с ${wallet.out.infoText} ${
+//          wallet.out.timeStamp &&
+//          timestampToDate(wallet.out.timeStamp, "dd.MM.yyyy HH:mm:ss")
+//       }`
+//    );
    await fetch(
       `https://api.trongrid.io/v1/accounts/${wallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${wallet.out.timeStamp}&only_from=true`
    )
@@ -430,7 +430,7 @@ async function checkOut(wallet) {
          }
       })
       .catch((error) => console.error(error));
-   console.log(" ");
+//    console.log(" ");
 }
 
 async function checkBalance(ctx, wallet) {
