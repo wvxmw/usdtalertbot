@@ -2,7 +2,7 @@ const { Telegraf, Markup } = require("telegraf");
 const fs = require("fs");
 const fetch = require("node-fetch");
 const timestampToDate = require("timestamp-to-date");
-const { timeStamp } = require("console");
+const { timeStamp, info } = require("console");
 require("dotenv").config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
@@ -87,17 +87,17 @@ const padWallet = {
    signs: "",
 };
 
-(async () => {
-   while (true) {
-      await checkDeposit(mainWallet, true);
-      await checkDeposit(ourWallet, false, false);
-      await checkDeposit(ourWallet2, false, false);
-      await checkDeposit(padWallet);
-      await checkOut(padWallet);
-      // await sleep(interval * 1000);
-      console.log("----------------------------------------------------------");
-   }
-})();
+// (async () => {
+//    while (true) {
+//         await checkDeposit(mainWallet, true);
+//         await checkDeposit(ourWallet, false, false);
+//         await checkDeposit(ourWallet2, false, false);
+//         await checkDeposit(padWallet);
+//         await checkOut(padWallet);
+//       // await sleep(interval * 1000);
+//         console.log("----------------------------------------------------------");
+//    }
+// })();
 
 bot.on("message", async (ctx) => {
    if (!ctx.message.text) return;
@@ -145,6 +145,41 @@ bot.on("message", async (ctx) => {
             } else await ctx.reply("Выводов не найдено");
          })
          .catch(async (error) => await ctx.reply("Что-то пошло не так"));
+   } else if (ctx.message.text.trim() === "/recent") {
+      const wallets = [ourWallet, ourWallet2];
+      const nowDate = new Date();
+      const minTimestamp = new Date(
+         nowDate.getTime() - 10 * 60 * 1000
+      ).getTime();
+      let info = "";
+      let sumAll = 0;
+      let countAll = 0;
+      for (let wallet of wallets) {
+         info += `<b>${wallet.address.substring(
+            wallet.address.length - 3
+         )}</b>\n`;
+         await fetch(
+            `https://api.trongrid.io/v1/accounts/${wallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${minTimestamp}&only_to=true`
+         )
+            .then((response) => response.json())
+            .then(async (data) => {
+               const transfers = data.data;
+               let sum = 0;
+               for (let transfer of transfers) {
+                  sum += +editedValue(transfer.value);
+               }
+               sumAll += sum;
+               countAll += transfers.length;
+               info += `${stringValue(sum)} USDT (${transfers.length})\n`;
+            })
+            .catch((error) => {
+               info += `Ошибка\n`;
+               console.error(error);
+            });
+         info += `\n`;
+      }
+      info += `<b>Всего</b>\n${stringValue(sumAll)} USDT (${countAll})`;
+      await ctx.reply(info, { parse_mode: "HTML" });
    }
 });
 bot.launch();
