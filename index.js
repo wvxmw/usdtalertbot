@@ -87,17 +87,17 @@ const padWallet = {
    signs: "",
 };
 
-// (async () => {
-//    while (true) {
-//         await checkDeposit(mainWallet, true);
-//         await checkDeposit(ourWallet, false, false);
-//         await checkDeposit(ourWallet2, false, false);
-//         await checkDeposit(padWallet);
-//         await checkOut(padWallet);
-//       // await sleep(interval * 1000);
-//         console.log("----------------------------------------------------------");
-//    }
-// })();
+(async () => {
+   while (true) {
+        await checkDeposit(mainWallet, true);
+        await checkDeposit(ourWallet, false, false);
+        await checkDeposit(ourWallet2, false, false);
+        await checkDeposit(padWallet);
+        await checkOut(padWallet);
+      // await sleep(interval * 1000);
+        console.log("----------------------------------------------------------");
+   }
+})();
 
 bot.on("message", async (ctx) => {
    if (!ctx.message.text) return;
