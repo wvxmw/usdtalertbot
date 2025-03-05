@@ -356,11 +356,11 @@ async function checkDeposit(wallet, isNeedAlert = false, isRound = true) {
                wallet.deposit.timeStamp = transfers[0].block_timestamp;
             }
          }
-         if (transfers) {
-            for (let i = 0; i < transfers.length; i++) {
-               console.log(`${i + 1}. ${transfers[i].transaction_id}`);
-            }
-         }
+        //  if (transfers) {
+        //     for (let i = 0; i < transfers.length; i++) {
+        //        console.log(`${i + 1}. ${transfers[i].transaction_id}`);
+        //     }
+        //  }
       })
       .catch((error) => console.error(error));
    await sleep(10);
@@ -423,11 +423,11 @@ async function checkOut(wallet) {
                wallet.out.timeStamp = outs[0].block_timestamp;
             }
          }
-         if (outs) {
-            for (let i = 0; i < outs.length; i++) {
-               console.log(`${i + 1}. ${outs[i].transaction_id}`);
-            }
-         }
+        //  if (outs) {
+        //     for (let i = 0; i < outs.length; i++) {
+        //        console.log(`${i + 1}. ${outs[i].transaction_id}`);
+        //     }
+        //  }
       })
       .catch((error) => console.error(error));
 //    console.log(" ");
