@@ -68,6 +68,44 @@ const ourWallet2 = {
    signs: "✅✅✅✅✅ о9х",
 };
 
+const arsenWallet = {
+   address: "TJaZSjJUHyHaSNoaBhk14CjBca3GUn7tZA",
+   deposit: {
+      id: "",
+      timeStamp: "",
+      infoText: "нашего кошелька",
+      subFile: "outsubscribers.json",
+      minAmount: 0,
+      showFrom: false,
+   },
+   out: {
+      id: "",
+      timeStamp: "",
+      infoText: "",
+      subFile: "",
+   },
+   signs: "✅✅✅✅✅ арсен",
+};
+
+const glebWallet = {
+   address: "TZ3frp12XAp7bdJZpxYkZFJjwFvn61hdsH",
+   deposit: {
+      id: "",
+      timeStamp: "",
+      infoText: "нашего кошелька",
+      subFile: "outsubscribers.json",
+      minAmount: 0,
+      showFrom: false,
+   },
+   out: {
+      id: "",
+      timeStamp: "",
+      infoText: "",
+      subFile: "",
+   },
+   signs: "✅✅✅✅✅ глеб",
+};
+
 const padWallet = {
    address: "TAVU6HYWn5Rh85DqEcXTRLLXUt8eA34hCo",
    deposit: {
@@ -95,33 +133,34 @@ const padWallet = {
       await checkDeposit(padWallet);
       await checkOut(padWallet);
       // await sleep(interval * 1000);
-    //   console.log("----------------------------------------------------------");
+      //   console.log("----------------------------------------------------------");
    }
 })();
 
 bot.on("message", async (ctx) => {
    if (!ctx.message.text) return;
-   if (ctx.message.text.trim() === "/balance") {
+   const command = ctx.message.text.trim().split(" ");
+   if (command[0] === "/balance") {
       checkBalance(ctx, mainWallet);
-   } else if (ctx.message.text.trim() === "/padbalance") {
+   } else if (command[0] === "/padbalance") {
       checkBalance(ctx, padWallet);
-   } else if (ctx.message.text.trim() === "/sub") {
+   } else if (command[0] === "/sub") {
       sub(ctx, mainWallet.deposit.subFile, "пополнений");
-   } else if (ctx.message.text.trim() === "/unsub") {
+   } else if (command[0] === "/unsub") {
       unsub(ctx, mainWallet.deposit.subFile, "пополнений");
-   } else if (ctx.message.text.trim() === "/outsub") {
+   } else if (command[0] === "/outsub") {
       sub(ctx, ourWallet.deposit.subFile, "выводов");
-   } else if (ctx.message.text.trim() === "/outunsub") {
+   } else if (command[0] === "/outunsub") {
       unsub(ctx, ourWallet.deposit.subFile, "выводов");
-   } else if (ctx.message.text.trim() === "/padsub") {
+   } else if (command[0] === "/padsub") {
       sub(ctx, padWallet.deposit.subFile, "пополнений прокладки");
-   } else if (ctx.message.text.trim() === "/padunsub") {
+   } else if (command[0] === "/padunsub") {
       unsub(ctx, padWallet.deposit.subFile, "пополнений прокладки");
-   } else if (ctx.message.text.trim() === "/padoutsub") {
+   } else if (command[0] === "/padoutsub") {
       sub(ctx, padWallet.out.subFile, "выводов с прокладки");
-   } else if (ctx.message.text.trim() === "/padoutunsub") {
+   } else if (command[0] === "/padoutunsub") {
       unsub(ctx, padWallet.out.subFile, "выводов с прокладки");
-   } else if (ctx.message.text.trim() === "/out") {
+   } else if (command[0] === "/out") {
       fetch(
          `https://api.trongrid.io/v1/accounts/${ourWallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&only_to=true`
       )
@@ -145,8 +184,15 @@ bot.on("message", async (ctx) => {
             } else await ctx.reply("Выводов не найдено");
          })
          .catch(async (error) => await ctx.reply("Что-то пошло не так"));
-   } else if (ctx.message.text.trim() === "/recent") {
-      const wallets = [ourWallet, ourWallet2];
+   } else if (command[0] === "/recent") {
+      let wallets = [ourWallet, ourWallet2];
+      if (command.length > 1) {
+         if (command[1] === "arsen") {
+            wallets = [arsenWallet];
+         } else if (command[1] === "gleb") {
+            wallets = [glebWallet];
+         }
+      }
       const nowDate = new Date();
       const minTimestamp = new Date(
          nowDate.getTime() - 10 * 60 * 1000
@@ -178,7 +224,8 @@ bot.on("message", async (ctx) => {
             });
          info += `\n`;
       }
-      info += `<b>Всего</b>\n${stringValue(sumAll)} USDT (${countAll})`;
+      if (wallets.length > 1)
+         info += `<b>Всего</b>\n${stringValue(sumAll)} USDT (${countAll})`;
       await ctx.reply(info, { parse_mode: "HTML" });
    }
 });
@@ -233,15 +280,15 @@ async function unsub(ctx, file, text) {
 }
 
 async function checkDeposit(wallet, isNeedAlert = false, isRound = true) {
-//    console.log(
-//       `Последнее ID пополнения ${wallet.deposit.infoText} ${wallet.deposit.id}`
-//    );
-//    console.log(
-//       `Последнее время пополнения ${wallet.deposit.infoText} ${
-//          wallet.deposit.timeStamp &&
-//          timestampToDate(wallet.deposit.timeStamp, "dd.MM.yyyy HH:mm:ss")
-//       }`
-//    );
+   //    console.log(
+   //       `Последнее ID пополнения ${wallet.deposit.infoText} ${wallet.deposit.id}`
+   //    );
+   //    console.log(
+   //       `Последнее время пополнения ${wallet.deposit.infoText} ${
+   //          wallet.deposit.timeStamp &&
+   //          timestampToDate(wallet.deposit.timeStamp, "dd.MM.yyyy HH:mm:ss")
+   //       }`
+   //    );
 
    await fetch(
       `https://api.trongrid.io/v1/accounts/${wallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${wallet.deposit.timeStamp}&only_to=true`
@@ -356,25 +403,25 @@ async function checkDeposit(wallet, isNeedAlert = false, isRound = true) {
                wallet.deposit.timeStamp = transfers[0].block_timestamp;
             }
          }
-        //  if (transfers) {
-        //     for (let i = 0; i < transfers.length; i++) {
-        //        console.log(`${i + 1}. ${transfers[i].transaction_id}`);
-        //     }
-        //  }
+         //  if (transfers) {
+         //     for (let i = 0; i < transfers.length; i++) {
+         //        console.log(`${i + 1}. ${transfers[i].transaction_id}`);
+         //     }
+         //  }
       })
       .catch((error) => console.error(error));
    await sleep(10);
-//    console.log(" ");
+   //    console.log(" ");
 }
 
 async function checkOut(wallet) {
-//    console.log(`Последнее ID вывода с ${wallet.out.infoText} ${wallet.out.id}`);
-//    console.log(
-//       `Последнее время вывода с ${wallet.out.infoText} ${
-//          wallet.out.timeStamp &&
-//          timestampToDate(wallet.out.timeStamp, "dd.MM.yyyy HH:mm:ss")
-//       }`
-//    );
+   //    console.log(`Последнее ID вывода с ${wallet.out.infoText} ${wallet.out.id}`);
+   //    console.log(
+   //       `Последнее время вывода с ${wallet.out.infoText} ${
+   //          wallet.out.timeStamp &&
+   //          timestampToDate(wallet.out.timeStamp, "dd.MM.yyyy HH:mm:ss")
+   //       }`
+   //    );
    await fetch(
       `https://api.trongrid.io/v1/accounts/${wallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${wallet.out.timeStamp}&only_from=true`
    )
@@ -423,14 +470,14 @@ async function checkOut(wallet) {
                wallet.out.timeStamp = outs[0].block_timestamp;
             }
          }
-        //  if (outs) {
-        //     for (let i = 0; i < outs.length; i++) {
-        //        console.log(`${i + 1}. ${outs[i].transaction_id}`);
-        //     }
-        //  }
+         //  if (outs) {
+         //     for (let i = 0; i < outs.length; i++) {
+         //        console.log(`${i + 1}. ${outs[i].transaction_id}`);
+         //     }
+         //  }
       })
       .catch((error) => console.error(error));
-//    console.log(" ");
+   //    console.log(" ");
 }
 
 async function checkBalance(ctx, wallet) {
