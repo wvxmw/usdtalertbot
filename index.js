@@ -73,7 +73,7 @@ const arsenWallet = {
    deposit: {
       id: "",
       timeStamp: "",
-      infoText: "нашего кошелька",
+      infoText: "кошелька арсена",
       subFile: "outsubscribers.json",
       minAmount: 0,
       showFrom: false,
@@ -92,7 +92,7 @@ const glebWallet = {
    deposit: {
       id: "",
       timeStamp: "",
-      infoText: "нашего кошелька",
+      infoText: "кошелька глеба",
       subFile: "outsubscribers.json",
       minAmount: 0,
       showFrom: false,
@@ -104,6 +104,25 @@ const glebWallet = {
       subFile: "",
    },
    signs: "✅✅✅✅✅ глеб",
+};
+
+const mishaWallet = {
+   address: "TBKGuW87Mg7HyiCixQZDgrtqac2hNweHzq",
+   deposit: {
+      id: "",
+      timeStamp: "",
+      infoText: "кошелька миши",
+      subFile: "outsubscribers.json",
+      minAmount: 0,
+      showFrom: false,
+   },
+   out: {
+      id: "",
+      timeStamp: "",
+      infoText: "",
+      subFile: "",
+   },
+   signs: "✅✅✅✅✅ миша",
 };
 
 const padWallet = {
@@ -191,6 +210,8 @@ bot.on("message", async (ctx) => {
             wallets = [arsenWallet];
          } else if (command[1] === "gleb") {
             wallets = [glebWallet];
+         } else if (command[1] === "misha") {
+            wallets = [mishaWallet];
          }
       }
       const nowDate = new Date();
