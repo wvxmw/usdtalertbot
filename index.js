@@ -301,6 +301,130 @@ async function unsub(ctx, file, text) {
 }
 
 async function checkDeposit(wallet, isNeedAlert = false, isRound = true) {
+   try {
+      await fetch(
+         `https://api.trongrid.io/v1/accounts/${wallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${wallet.deposit.timeStamp}&only_to=true`
+      )
+         .then((response) => response.json())
+         .then(async (data) => {
+            const transfers = data.data;
+            if (wallet.deposit.id !== "" && transfers.length > 0) {
+               if (wallet.deposit.id !== transfers[0].transaction_id) {
+                  let newAmount = null;
+                  await sleep(10);
+                  await fetch(
+                     `https://api.trongrid.io/v1/accounts/${wallet.address}`
+                  )
+                     .then((response) => response.json())
+                     .then(async (data) => {
+                        if (data.data.length > 0) {
+                           if (data.data[0].trc20.length > 0) {
+                              for (let el of data.data[0].trc20) {
+                                 for (let token in el) {
+                                    if (token === contract_address) {
+                                       newAmount = editedValue(el[token]);
+                                       break;
+                                    }
+                                 }
+                              }
+                           }
+                        }
+                     })
+                     .catch(async (error) => {});
+
+                  let maxI = transfers.length - 1;
+                  for (let i = 0; i < transfers.length; i++) {
+                     if (transfers[i].transaction_id === wallet.deposit.id) {
+                        maxI = i - 1;
+                     }
+                  }
+
+                  let isAlert = false;
+                  for (let i = maxI; i >= 0; i--) {
+                     if (transfers[i].transaction_id !== wallet.deposit.id) {
+                        const transferAmount = editedValue(transfers[i].value);
+                        if (transferAmount >= wallet.deposit.minAmount) {
+                           isAlert = true;
+                           await bot.telegram.sendMessage(
+                              mainChatId,
+                              `${
+                                 wallet.signs && wallet.signs + "\n"
+                              }Пополнение ${wallet.deposit.infoText} ${
+                                 wallet.deposit.showFrom
+                                    ? "\nС кошелька: " +
+                                      transfers[i].from.slice(0, 4) +
+                                      "***" +
+                                      transfers[i].from.slice(-4)
+                                    : ""
+                              }\nСумма: ${
+                                 isRound
+                                    ? stringValue(transferAmount)
+                                    : stringValue(
+                                         editedValue(transfers[i].value, 1)
+                                      )
+                              } USDT\nВремя: ${timestampToDate(
+                                 transfers[i].block_timestamp,
+                                 "HH:mm:ss"
+                              )}${
+                                 newAmount !== null
+                                    ? `\nНовый баланс: ${stringValue(
+                                         newAmount
+                                      )} USDT`
+                                    : ""
+                              }`
+                           );
+                        }
+                     }
+                  }
+                  wallet.deposit.id = transfers[0].transaction_id;
+                  wallet.deposit.timeStamp = transfers[0].block_timestamp;
+                  if (isAlert && isNeedAlert) {
+                     setTimeout(async () => {
+                        await fetch(
+                           `https://api.trongrid.io/v1/accounts/${wallet.address}`
+                        )
+                           .then((response) => response.json())
+                           .then(async (data) => {
+                              if (data.data.length > 0) {
+                                 if (data.data[0].trc20.length > 0) {
+                                    for (let el of data.data[0].trc20) {
+                                       for (let token in el) {
+                                          if (token === contract_address) {
+                                             await bot.telegram.sendMessage(
+                                                mainChatId,
+                                                `Баланс ${
+                                                   wallet.deposit.infoText
+                                                }: ${stringValue(
+                                                   editedValue(el[token])
+                                                )} USDT`
+                                             );
+                                             break;
+                                          }
+                                       }
+                                    }
+                                 }
+                              }
+                           })
+                           .catch(async (error) => {});
+                     }, 60000);
+                  }
+               }
+            } else {
+               if (transfers.length > 0) {
+                  wallet.deposit.id = transfers[0].transaction_id;
+                  wallet.deposit.timeStamp = transfers[0].block_timestamp;
+               }
+            }
+            //  if (transfers) {
+            //     for (let i = 0; i < transfers.length; i++) {
+            //        console.log(`${i + 1}. ${transfers[i].transaction_id}`);
+            //     }
+            //  }
+         })
+         .catch((error) => console.error(error));
+   } catch (error) {
+      console.log(error);
+   }
    //    console.log(
    //       `Последнее ID пополнения ${wallet.deposit.infoText} ${wallet.deposit.id}`
    //    );
@@ -311,126 +435,6 @@ async function checkDeposit(wallet, isNeedAlert = false, isRound = true) {
    //       }`
    //    );
 
-   await fetch(
-      `https://api.trongrid.io/v1/accounts/${wallet.address}/transactions/trc20?limit=20&contract_address=${contract_address}&min_timestamp=${wallet.deposit.timeStamp}&only_to=true`
-   )
-      .then((response) => response.json())
-      .then(async (data) => {
-         const transfers = data.data;
-         if (wallet.deposit.id !== "" && transfers.length > 0) {
-            if (wallet.deposit.id !== transfers[0].transaction_id) {
-               let newAmount = null;
-               await sleep(10);
-               await fetch(
-                  `https://api.trongrid.io/v1/accounts/${wallet.address}`
-               )
-                  .then((response) => response.json())
-                  .then(async (data) => {
-                     if (data.data.length > 0) {
-                        if (data.data[0].trc20.length > 0) {
-                           for (let el of data.data[0].trc20) {
-                              for (let token in el) {
-                                 if (token === contract_address) {
-                                    newAmount = editedValue(el[token]);
-                                    break;
-                                 }
-                              }
-                           }
-                        }
-                     }
-                  })
-                  .catch(async (error) => {});
-
-               let maxI = transfers.length - 1;
-               for (let i = 0; i < transfers.length; i++) {
-                  if (transfers[i].transaction_id === wallet.deposit.id) {
-                     maxI = i - 1;
-                  }
-               }
-
-               let isAlert = false;
-               for (let i = maxI; i >= 0; i--) {
-                  if (transfers[i].transaction_id !== wallet.deposit.id) {
-                     const transferAmount = editedValue(transfers[i].value);
-                     if (transferAmount >= wallet.deposit.minAmount) {
-                        isAlert = true;
-                        await bot.telegram.sendMessage(
-                           mainChatId,
-                           `${wallet.signs && wallet.signs + "\n"}Пополнение ${
-                              wallet.deposit.infoText
-                           } ${
-                              wallet.deposit.showFrom
-                                 ? "\nС кошелька: " +
-                                   transfers[i].from.slice(0, 4) +
-                                   "***" +
-                                   transfers[i].from.slice(-4)
-                                 : ""
-                           }\nСумма: ${
-                              isRound
-                                 ? stringValue(transferAmount)
-                                 : stringValue(
-                                      editedValue(transfers[i].value, 1)
-                                   )
-                           } USDT\nВремя: ${timestampToDate(
-                              transfers[i].block_timestamp,
-                              "HH:mm:ss"
-                           )}${
-                              newAmount !== null
-                                 ? `\nНовый баланс: ${stringValue(
-                                      newAmount
-                                   )} USDT`
-                                 : ""
-                           }`
-                        );
-                     }
-                  }
-               }
-               wallet.deposit.id = transfers[0].transaction_id;
-               wallet.deposit.timeStamp = transfers[0].block_timestamp;
-               if (isAlert && isNeedAlert) {
-                  setTimeout(async () => {
-                     await fetch(
-                        `https://api.trongrid.io/v1/accounts/${wallet.address}`
-                     )
-                        .then((response) => response.json())
-                        .then(async (data) => {
-                           if (data.data.length > 0) {
-                              if (data.data[0].trc20.length > 0) {
-                                 for (let el of data.data[0].trc20) {
-                                    for (let token in el) {
-                                       if (token === contract_address) {
-                                          await bot.telegram.sendMessage(
-                                             mainChatId,
-                                             `Баланс ${
-                                                wallet.deposit.infoText
-                                             }: ${stringValue(
-                                                editedValue(el[token])
-                                             )} USDT`
-                                          );
-                                          break;
-                                       }
-                                    }
-                                 }
-                              }
-                           }
-                        })
-                        .catch(async (error) => {});
-                  }, 60000);
-               }
-            }
-         } else {
-            if (transfers.length > 0) {
-               wallet.deposit.id = transfers[0].transaction_id;
-               wallet.deposit.timeStamp = transfers[0].block_timestamp;
-            }
-         }
-         //  if (transfers) {
-         //     for (let i = 0; i < transfers.length; i++) {
-         //        console.log(`${i + 1}. ${transfers[i].transaction_id}`);
-         //     }
-         //  }
-      })
-      .catch((error) => console.error(error));
    await sleep(10);
    //    console.log(" ");
 }
