@@ -12,7 +12,7 @@ const mainChatId = "-1002404665258";
 // 5509442847
 // -1002404665258
 const mainWallet = {
-   address: "TNFm9JdGoj58wnkos742obF8mN4Xcm5n6X",
+   address: "TBnKDKJqRKyn39Xzzs3saCoA3tVzLbJ3gD",
    deposit: {
       id: "",
       timeStamp: "",
