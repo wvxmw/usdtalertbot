@@ -8,7 +8,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const interval = 3;
-const mainChatId = "-1002404665258";
+const mainChatId = "-1002253121294";
 // 5509442847
 // -1002404665258
 const mainWallet = {
