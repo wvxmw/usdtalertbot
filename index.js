@@ -147,11 +147,11 @@ const padWallet = {
 (async () => {
    while (true) {
       await checkDeposit(mainWallet, true);
+	  await sleep(interval * 1000);
       await checkDeposit(ourWallet, false, false);
+	  await sleep(interval * 1000);
       await checkDeposit(ourWallet2, false, false);
-      await checkDeposit(padWallet);
-      await checkOut(padWallet);
-      // await sleep(interval * 1000);
+	  await sleep(interval * 1000);
       //   console.log("----------------------------------------------------------");
    }
 })();
